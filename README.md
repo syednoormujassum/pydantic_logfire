@@ -64,6 +64,3 @@ At present, this prints `Hello from pydantic-logfire!`; it does not start a web 
 - `pyproject.toml` and `uv.lock` — Project metadata, dependency declarations, and locked versions.
 - `requirements.txt` — Alternative pip-style dependency list.
 
-## Credentials already exposed
-
-The workspace scan found a local `.env` containing credentials. Although Git ignores this file, any credentials that have been shared or exposed should be revoked and replaced with new values in the provider dashboards. Keep replacement values only in the local ignored `.env` file or a secret manager.
