@@ -1,68 +1,72 @@
 # Pydantic Logfire Experiments
 
-A Python learning workspace for instrumenting application and LLM activity with [Pydantic Logfire](https://logfire.pydantic.dev/). The notebooks contain progressively more detailed examples: basic events and spans, Pydantic request/response models, provider calls through LangChain, and nested tracing around calls to Google Gemini, Groq, and OpenAI-compatible APIs.
+A Python learning workspace for experimenting with [Pydantic Logfire](https://logfire.pydantic.dev/), LangChain, LLM provider APIs, and retrieval-augmented generation (RAG). The main examples live in Jupyter notebooks; `main.py` remains a minimal starter script, not a production app.
 
-This is an experimental notebook project, not a finished application. `main.py` currently only prints a greeting; the Streamlit, LangGraph, and retrieval/vector-search dependencies are not yet connected to an app.
-
-## Notebook flow
+## Workspace flow
 
 ```mermaid
 flowchart TD
-    A[Create environment and install dependencies] --> B[Set provider credentials in local .env]
-    B --> C{Choose a notebook}
-    C --> D[logfire.ipynb: basic events and ETL span]
-    C --> E[logfire_part2.ipynb: typed LLM request and response]
-    E --> F[Configure Logfire and OpenAI instrumentation]
-    F --> G[Call a provider through LangChain]
-    G --> H[Record request, response, and timing]
-    H --> I[Inspect parent and child spans in Logfire]
-    D --> I
+   A[Set up Python 3.14+ and install with uv] --> B[Add provider credentials to local .env]
+   B --> C{Choose an experiment}
+   C --> D[logfire.ipynb: events and ETL span]
+   C --> E[logfire_part2.ipynb: typed LLM request and provider calls]
+   C --> F[Rag.ipynb: load document.json]
+   F --> G[Convert records to LangChain Documents]
+   G --> H[Embed with Google Generative AI]
+   H --> I[Build an in-memory FAISS vector index]
+   I --> J[Retrieve relevant context for a question]
+   J --> K[Generate an answer with Gemini or Groq]
+   D --> L[Inspect logs and traces in Logfire]
+   E --> L
+   K --> L
 ```
 
-The multi-provider example in `logfire_part2.ipynb` wraps calls in a parent span and a child span per provider. The calls are made one after another, even though the parent span's name says “Simultanously”.
+## Requirements and setup
 
-## Requirements
+- Python 3.14 or newer, as specified by `.python-version` and `pyproject.toml`.
+- [uv](https://docs.astral.sh/uv/) for environment and dependency management.
+- Provider credentials for the integrations you want to try, plus a Logfire project for remote telemetry.
 
-- Python 3.14 or newer (from `pyproject.toml` and `.python-version`).
-- [uv](https://docs.astral.sh/uv/) for dependency and environment management.
-- API credentials for whichever providers you plan to call. The notebook reads `Gemini_API`, `Logfire_API`, `Open_AI_API`, `Groq_API`, and `Tavily_API` from the environment. Not every notebook example needs every key.
-- A Logfire project/account to receive telemetry.
+From the workspace root:
 
-## Setup
+```sh
+uv sync
+cp -n .env_git_sample .env
+```
 
-1. Install the project dependencies from the workspace root:
+Edit `.env` and fill in only the keys you need. The sample defines these variable names:
 
-   ```sh
-   uv sync
-   ```
+```dotenv
+Tavily_API=
+Groq_API=
+Open_AI_API=
+Logfire_API=
+Gemini_API=
+```
 
-2. Copy `.env_git_sample` to `.env` and fill in only the credentials needed for your tests:
+`.env` is ignored by Git. Never commit or share real credentials. If any key has been exposed, revoke it with its provider and replace it. In VS Code, open a notebook, select the workspace `.venv` kernel, and run setup cells before the cells that use the configured model, retriever, or Logfire.
 
-   ```dotenv
-   Gemini_API=your_gemini_key
-   Logfire_API=your_logfire_token
-   Open_AI_API=your_openai_key
-   Groq_API=your_groq_key
-   Tavily_API=your_tavily_key
-   ```
+## Notebooks and data
 
-   `.env` is ignored by Git. Never commit or share real keys. If a key has been exposed, revoke it with its provider and replace it.
+### `Rag.ipynb`
 
-3. Open a notebook in VS Code and select the project's `.venv` kernel (Python 3.14+). Run the required setup cells first so imports, environment variables, model objects, and `logfire.configure()` are initialized.
+Loads `document.json`, converts its topic/content records into LangChain `Document` objects, embeds them with `GoogleGenerativeAIEmbeddings`, and builds an in-memory FAISS index. The retriever is configured to return two documents per query. The `rag()` function sends retrieved context to a Groq chat model; `rag2()` uses Gemini. Both functions create a Logfire parent span and log retrieved topics and the generated output. Print or display the returned value when calling a function, for example `print(rag("What is RAG?"))`.
 
-## Notebooks
+The notebook contains separate model setup experiments, including an OpenAI-compatible Groq endpoint. Running cells that reassign a model variable changes which provider/model later calls use. Run the setup cell for the provider you intend to test before defining/calling the corresponding RAG function. Provider model IDs and access can change; check the provider's current model list if a call returns a model-not-found or server error.
+
+The FAISS index is constructed in memory each time the embedding/index cell runs; it is not loaded from or saved to disk by the current notebook.
 
 ### `logfire.ipynb`
 
-Demonstrates loading `.env`, configuring Logfire, emitting `logfire.info()` events, and creating an ETL-style parent span with nested step events. It also includes optional system-metrics instrumentation.
+Demonstrates loading environment variables, configuring Logfire, writing `logfire.info()` events, and grouping example ETL steps in a parent span. It also contains an optional system-metrics instrumentation example.
 
 ### `logfire_part2.ipynb`
 
-Demonstrates Pydantic models for sample LLM request/response data, manual spans, automatic OpenAI-client instrumentation, and provider calls using LangChain's `ChatOpenAI` wrapper with provider-compatible endpoints. It also includes a Groq model-list example and a traced multi-provider example with latency and response-length attributes.
+Contains Pydantic request/response models, manually created spans, OpenAI-compatible provider calls, and examples of tracing model activity and timing. Treat it as an experiment: execute setup cells in order, verify model IDs and credentials, and be aware that model setup/deletion cells can affect later examples.
 
-Model identifiers and provider access can change. If a request returns `model_not_found` or an access error, check the provider's current model list and use an ID enabled for your account. Keep the notebook's configured model ID and any mock `model_used` labels consistent.
+### `document.json`
 
-**Notebook execution note:** the OpenAI model setup cell is followed by a cell that deletes `openai_llm`, while the later multi-provider example uses it. After restarting the kernel, skip that deletion cell or rerun the model setup before running the multi-provider example.
+Small example knowledge base with records on RAG, fine-tuning, evaluations, observability, prompting, and LLM gateways. `Rag.ipynb` reads this file from the current working directory.
 
 ## Run the starter script
 
@@ -70,14 +74,16 @@ Model identifiers and provider access can change. If a request returns `model_no
 uv run main.py
 ```
 
-This currently prints `Hello from pydantic-logfire!`; it does not launch a server or make an LLM call.
+This prints `Hello from pydantic-logfire!`; it does not launch a server or run an LLM workflow.
 
 ## Project files
 
-- `logfire.ipynb` — Basic Logfire events and nested tracing.
-- `logfire_part2.ipynb` — Pydantic, LangChain/provider, and multi-provider tracing experiments.
+- `Rag.ipynb` — RAG ingestion, retrieval, model calls, and Logfire tracing experiments.
+- `logfire.ipynb` — Basic Logfire events and spans.
+- `logfire_part2.ipynb` — Pydantic and multi-provider tracing experiments.
+- `document.json` — Sample RAG knowledge-base records.
 - `main.py` — Minimal Python entry point.
-- `pyproject.toml` and `uv.lock` — Project metadata, dependencies, and resolved versions.
+- `pyproject.toml` and `uv.lock` — Project metadata, dependency declarations, and resolved versions.
 - `requirements.txt` — Alternative pip requirements list.
-- `.env_git_sample` — Empty template for local provider credentials; copy to `.env` before adding keys.
+- `.env_git_sample` — Empty local credentials template; copy it to `.env`.
 

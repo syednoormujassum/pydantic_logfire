@@ -1,0 +1,36 @@
+[
+  {
+    "topic": "RAG",
+    "source": "doc1_",
+    "content": "Retrieval-augmented generation (RAG) combines information retrieval with text generation. A system searches a collection of relevant documents for a user's query, then supplies the retrieved passages as context to a language model so the answer can be grounded in that material."
+  },
+
+  {
+    "topic": "Finetuning",
+    "source": "doc_2",
+    "content": "Fine-tuning adapts a pretrained language model by training it further on examples for a particular task, style, or domain. The training examples typically pair inputs with desired outputs, and optimization adjusts model parameters to make the model more likely to produce those outputs."
+  },
+
+  {
+    "topic": "Evals",
+    "source": "doc_3",
+    "content": "LLM evaluations (evals) are repeatable tests that measure whether a model or application meets defined quality criteria. An evaluation set contains representative inputs and expected outcomes or grading criteria; running the system on that set produces measurements that can be compared across prompts, models, or releases."
+  },
+
+  {
+    "topic": "Observability",
+    "source": "doc_4",
+    "content": "Observability helps developers understand a running system by examining its emitted telemetry. Logs record events, metrics summarize numeric measurements over time, and traces show the path and timing of work across operations or services. Together these signals help investigate errors, performance, and system behavior."
+  },
+
+  {
+    "topic": "Prompting",
+    "source": "doc_5",
+    "content": "Prompt development is iterative: create a baseline, test it on representative examples, inspect failures, and revise instructions or examples. Few-shot prompting includes example input-output pairs to demonstrate a pattern. Prompt changes should be evaluated against a stable test set because improvements on one example can cause regressions elsewhere."
+  },
+  {
+    "topic": "LLM Gateways",
+    "source": "doc_6",
+    "content": "Gateway capabilities may include routing requests by model or task, enforcing rate limits, handling retries and timeouts, and collecting usage or cost telemetry. Provider compatibility is not guaranteed: model identifiers, supported parameters, response formats, and error behavior can differ. Keep credentials secure, define fallback behavior carefully, and verify provider and model availability."
+  }
+]
